@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>AbilityCooldownDisplay</RootNamespace>
+        <Configurations>Debug;Release</Configurations>
+        <Nullable>enable</Nullable>
+        <AssemblyName>AbilityCooldownDisplay</AssemblyName>
+        <LangVersion>latest</LangVersion>
+        <Optimize>False</Optimize>
+        <DebugType>embedded</DebugType>
+    </PropertyGroup>
+    <ItemGroup>
+      <Folder Include="Util\" />
+    </ItemGroup>
+    
+    <Import Project="..\btd6.targets" />
+</Project>

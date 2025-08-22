@@ -1,0 +1,152 @@
+using BTD_Mod_Helper;
+using BTD_Mod_Helper.Api.Components;
+using BTD_Mod_Helper.Api.Enums;
+using BTD_Mod_Helper.Api.ModOptions;
+using BTD_Mod_Helper.Extensions;
+using HarmonyLib;
+using Il2CppAssets.Scripts.Data;
+using Il2CppAssets.Scripts.Data.MapSets;
+using Il2CppAssets.Scripts.Unity.Bridge;
+using Il2CppAssets.Scripts.Unity.UI_New.InGame;
+using Il2CppAssets.Scripts.Unity.UI_New.InGame.AbilitiesMenu;
+using Il2CppAssets.Scripts.Unity.UI_New.InGame.TowerSelectionMenu;
+using Il2CppAssets.Scripts.Unity.UI_New.Main.MapSelect;
+using Il2CppSystem.Security.Cryptography;
+using Il2CppTMPro;
+using MelonLoader;
+using Newtonsoft.Json.Linq;
+using NoInGameUI;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+[assembly: MelonInfo(typeof(AbilitySeconds.AbilitySeconds), ModHelperData.Name, ModHelperData.Version, ModHelperData.RepoOwner)]
+[assembly: MelonGame("Ninja Kiwi", "BloonsTD6")]
+
+namespace AbilitySeconds;
+
+public class AbilitySeconds : BloonsTD6Mod
+{
+    public static MelonPreferences_Category Preferences { get; private set; } = null!;
+
+    public static readonly ModSettingInt DecimalPlaces = new(1)
+    {
+        icon = VanillaSprites.EnterCodeIcon,
+        min = 0,
+        max = 2,
+        description = "Amount of decimal places to display.",
+        slider = true,
+    };
+
+    public static readonly ModSettingBool EnableColor = new(true)
+    {
+        icon = VanillaSprites.Rainbow2,
+        description = "Enable a red hue for abilities. The more time on a cooldown, the deeper the red.",
+    };
+
+    public static readonly ModSettingDouble TextOpacity = new(1)
+    {
+        icon = VanillaSprites.EmoteTextSpeechBubble,
+        description = "Ability Timer Text Opacity. 0.0 = text disabled",
+        min = 0,
+        max = 1,
+        slider = true,
+        stepSize = 0.01f,
+    };
+
+    public override void OnApplicationStart()
+    {
+        ModHelper.Msg<AbilitySeconds>("AbilitySeconds mod loaded.");
+    }
+
+    [HarmonyPatch(typeof(AbilityMenu), nameof(AbilityMenu.Update))]
+    internal static class AbilityMenu_Update
+    {
+        [HarmonyPrefix]
+        internal static void Prefix(AbilityMenu __instance)
+        {
+            foreach (var a in __instance.GetAbilitiesButtons())
+            {
+                var fastestAbility = a.abilities.ToArray()
+                    .OrderBy(x => x.CooldownRemaining)
+                    .First();
+
+                ApplyCooldownText(fastestAbility, a.gameObject);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(TowerSelectionMenu), nameof(TowerSelectionMenu.OnUpdate))]
+    internal static class AbilityButton
+    {
+        [HarmonyPrefix]
+        internal static void Prefix(TowerSelectionMenu __instance)
+        {
+            foreach (var a in __instance.abilityButtons)
+            {
+                ApplyCooldownText(a.ability, a.gameObject);
+            }
+        }
+    }
+
+    private static void ApplyCooldownText(AbilityToSimulation ability, GameObject abilityGameObject)
+    {
+        if (ability is null) return;
+        // Check if we've already added our panel
+        var existing = abilityGameObject.transform.Find("AbilitySecondsTextPanel");
+
+        if (ability.IsReady)
+        {
+            if (existing) existing.gameObject.Destroy();
+            return;
+        }
+
+        var cooldown = ability.CooldownRemaining;
+
+        ModHelperPanel textPanel;
+
+        if (existing == null)
+        {
+            var rectTransform = abilityGameObject.GetComponent<RectTransform>();
+            // Make the panel
+            textPanel = abilityGameObject.AddModHelperPanel(
+                new("AbilitySecondsTextPanel", 0, 0, rectTransform.rect.width, rectTransform.rect.height));
+
+            // Fade the background
+            var image = textPanel.GetComponent<UnityEngine.UI.Image>();
+
+            textPanel.AddComponent<CanvasGroup>().blocksRaycasts = false;
+
+            // Add the text element
+            var newText = textPanel.AddText(
+                new("AbilitySecondsText", 0, 0, rectTransform.rect.width, rectTransform.rect.height - 30),
+                text: "",
+                fontSize: 68f,
+                align: TextAlignmentOptions.Bottom);
+
+            newText.transform.SetParent(textPanel.transform);
+        }
+        else
+        {
+            textPanel = existing.GetComponent<ModHelperPanel>();
+        }
+
+        // Update the text only
+        var text = textPanel.transform.Find("AbilitySecondsText")
+            .GetComponent<ModHelperText>();
+
+        if (EnableColor)
+        {
+            var t = ability.CooldownRemaining / ability.CooldownTotal;
+            text.Text.color = new Color(1f, 1f - t, 1f - t, TextOpacity);
+        }
+        else
+        {
+            text.Text.color = new Color(1f, 1f, 1f, TextOpacity);
+        }
+
+            string s = string.Format("{0:F" + DecimalPlaces.GetValue() + "}", cooldown);
+        text.SetText(s);
+    }
+
+}
