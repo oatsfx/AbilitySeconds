@@ -7,7 +7,7 @@ on:
       - "*"
 
 env:
-  PROJECT_NAME: BetterScreenshot
+  PROJECT_NAME: AbilitySeconds
 
   MOD_HELPER_NAME: Btd6ModHelper
   BLOONSTD6: ./BloonsTD6
