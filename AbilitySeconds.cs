@@ -27,8 +27,6 @@ namespace AbilitySeconds;
 
 public class AbilitySeconds : BloonsTD6Mod
 {
-    public static MelonPreferences_Category Preferences { get; private set; } = null!;
-
     public static readonly ModSettingDouble TextOpacity = new(1)
     {
         icon = VanillaSprites.EmoteTextSpeechBubble,
