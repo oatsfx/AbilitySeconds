@@ -29,21 +29,6 @@ public class AbilitySeconds : BloonsTD6Mod
 {
     public static MelonPreferences_Category Preferences { get; private set; } = null!;
 
-    public static readonly ModSettingInt DecimalPlaces = new(1)
-    {
-        icon = VanillaSprites.EnterCodeIcon,
-        min = 0,
-        max = 2,
-        description = "Amount of decimal places to display.",
-        slider = true,
-    };
-
-    public static readonly ModSettingBool EnableColor = new(true)
-    {
-        icon = VanillaSprites.Rainbow2,
-        description = "Enable a red hue for abilities. The more time on a cooldown, the deeper the red.",
-    };
-
     public static readonly ModSettingDouble TextOpacity = new(1)
     {
         icon = VanillaSprites.EmoteTextSpeechBubble,
@@ -54,10 +39,27 @@ public class AbilitySeconds : BloonsTD6Mod
         stepSize = 0.01f,
     };
 
-    public override void OnApplicationStart()
+    public static readonly ModSettingInt DecimalPlaces = new(1)
     {
-        ModHelper.Msg<AbilitySeconds>("AbilitySeconds mod loaded.");
-    }
+        icon = VanillaSprites.EnterCodeIcon,
+        min = 0,
+        max = 2,
+        description = "Amount of decimal places to display.",
+        slider = true,
+    };
+
+    public static readonly ModSettingBool EnableTextColor = new(true)
+    {
+        icon = VanillaSprites.Rainbow2,
+        description = "Enable a red hue for abilities. The more time on a cooldown, the deeper the red.",
+    };
+
+    public static readonly ModSettingBool EnableDefaultCooldownCircle = new(false)
+    {
+        icon = VanillaSprites.CooldownClockBg,
+        description = "Enable the default cooldown circle.",
+    };
+
 
     [HarmonyPatch(typeof(AbilityMenu), nameof(AbilityMenu.Update))]
     internal static class AbilityMenu_Update
@@ -94,6 +96,9 @@ public class AbilitySeconds : BloonsTD6Mod
         if (ability is null) return;
         // Check if we've already added our panel
         var existing = abilityGameObject.transform.Find("AbilitySecondsTextPanel");
+
+        var cooldownObj = abilityGameObject.transform.Find("CooldownEffect");
+        cooldownObj?.gameObject.SetActive(EnableDefaultCooldownCircle);
 
         if (ability.IsReady)
         {
@@ -135,7 +140,7 @@ public class AbilitySeconds : BloonsTD6Mod
         var text = textPanel.transform.Find("AbilitySecondsText")
             .GetComponent<ModHelperText>();
 
-        if (EnableColor)
+        if (EnableTextColor)
         {
             var t = ability.CooldownRemaining / ability.CooldownTotal;
             text.Text.color = new Color(1f, 1f - t, 1f - t, TextOpacity);
@@ -145,8 +150,7 @@ public class AbilitySeconds : BloonsTD6Mod
             text.Text.color = new Color(1f, 1f, 1f, TextOpacity);
         }
 
-            string s = string.Format("{0:F" + DecimalPlaces.GetValue() + "}", cooldown);
+        string s = string.Format("{0:F" + DecimalPlaces.GetValue() + "}", cooldown);
         text.SetText(s);
     }
-
 }
