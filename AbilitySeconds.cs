@@ -60,6 +60,11 @@ public class AbilitySeconds : BloonsTD6Mod
         description = "Enable the default cooldown circle.",
     };
 
+    public static readonly ModSettingBool EnableTrailingS = new(true)
+    {
+        description = "Enable to have \"s\" appended to timers (i.e. 6.9s opposed to 6.9).",
+    };
+
 
     [HarmonyPatch(typeof(AbilityMenu), nameof(AbilityMenu.Update))]
     internal static class AbilityMenu_Update
@@ -117,14 +122,9 @@ public class AbilitySeconds : BloonsTD6Mod
             textPanel = abilityGameObject.AddModHelperPanel(
                 new("AbilitySecondsTextPanel", 0, 0, rectTransform.rect.width, rectTransform.rect.height));
 
-            // Fade the background
-            var image = textPanel.GetComponent<UnityEngine.UI.Image>();
-
-            textPanel.AddComponent<CanvasGroup>().blocksRaycasts = false;
-
             // Add the text element
             var newText = textPanel.AddText(
-                new("AbilitySecondsText", 0, 0, rectTransform.rect.width, rectTransform.rect.height - 30),
+                new("AbilitySecondsText", 0, 0, rectTransform.rect.width + 25, rectTransform.rect.height - 30),
                 text: "",
                 fontSize: 68f,
                 align: TextAlignmentOptions.Bottom);
@@ -150,7 +150,7 @@ public class AbilitySeconds : BloonsTD6Mod
             text.Text.color = new Color(1f, 1f, 1f, TextOpacity);
         }
 
-        string s = string.Format("{0:F" + DecimalPlaces.GetValue() + "}", cooldown);
+        string s = $"{string.Format("{0:F" + DecimalPlaces.GetValue() + "}", cooldown)}{(EnableTrailingS ? "s" : "")}";
         text.SetText(s);
     }
 }

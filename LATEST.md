@@ -1,1 +1,1 @@
-Added setting to disable default cooldown circle
+Added a trailing "s" to timers
